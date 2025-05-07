@@ -1,0 +1,1 @@
+rootProject.name = "Gerenciamento_de_Tarefas"
