@@ -1,7 +1,7 @@
 package br.com.stackmob.ui;
 
 import br.com.stackmob.persistence.entity.BoardColumnEntity;
-import br.com.stackmob.persistence.entity.BoardColumnKingEnum;
+import br.com.stackmob.persistence.entity.BoardColumnKindEnum;
 import br.com.stackmob.persistence.entity.BoardEntity;
 import br.com.stackmob.service.BoardQueryService;
 import br.com.stackmob.service.BoardService;
@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.Scanner;
 
 import static br.com.stackmob.persistence.config.ConnectionConfig.getConnection;
-import static br.com.stackmob.persistence.entity.BoardColumnKingEnum.*;
+import static br.com.stackmob.persistence.entity.BoardColumnKindEnum.*;
 
 public class MainMenu {
 
@@ -80,7 +80,7 @@ public class MainMenu {
 
     }
 
-    private void createdBoard(String text, BoardColumnKingEnum kind, int order, List<BoardColumnEntity> columns) {
+    private void createdBoard(String text, BoardColumnKindEnum kind, int order, List<BoardColumnEntity> columns) {
         System.out.println(text);
         String nameColumns = sc.next();
         BoardColumnEntity boardColumn = createdColum(nameColumns, kind, order);
@@ -118,7 +118,7 @@ public class MainMenu {
         }
     }
 
-    private BoardColumnEntity createdColum(String name, BoardColumnKingEnum kind, int order){
+    private BoardColumnEntity createdColum(String name, BoardColumnKindEnum kind, int order){
         BoardColumnEntity boardColumn = new BoardColumnEntity();
         boardColumn.setName(name);
         boardColumn.setOrder(order);

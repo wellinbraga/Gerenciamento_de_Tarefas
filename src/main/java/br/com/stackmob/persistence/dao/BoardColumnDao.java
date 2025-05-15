@@ -1,14 +1,18 @@
 package br.com.stackmob.persistence.dao;
 
+import br.com.stackmob.dto.BoardColumnDTO;
 import br.com.stackmob.persistence.entity.BoardColumnEntity;
-import br.com.stackmob.persistence.entity.BoardColumnKingEnum;
+import br.com.stackmob.persistence.entity.BoardColumnKindEnum;
+import br.com.stackmob.persistence.entity.CardEntity;
 import com.mysql.cj.jdbc.StatementImpl;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import static br.com.stackmob.persistence.entity.BoardColumnKindEnum.findByName;
 
 @RequiredArgsConstructor
 public class BoardColumnDao {
@@ -40,12 +44,12 @@ public class BoardColumnDao {
             statement.setLong(1, id);
             statement.executeQuery();
             ResultSet rsSelectBoardColumns = statement.getResultSet();
-            if(rsSelectBoardColumns.next()){
+            while(rsSelectBoardColumns.next()){
                 BoardColumnEntity entity = new BoardColumnEntity();
                 entity.setId(rsSelectBoardColumns.getLong("id"));
                 entity.setName(rsSelectBoardColumns.getString("name"));
                 entity.setOrder(rsSelectBoardColumns.getInt("order"));
-                entity.setKind(BoardColumnKingEnum.findByName(rsSelectBoardColumns.getString("kind")));
+                entity.setKind(findByName(rsSelectBoardColumns.getString("kind")));
 
                 entities.add(entity);
             }
@@ -56,20 +60,56 @@ public class BoardColumnDao {
         return entities;
     }
 
-    public List<BoardColumnEntity> findByBoard(Long id) {
-        List<BoardColumnEntity> entities = new ArrayList();
+    public List<BoardColumnDTO> findByBoard(Long id) {
+        List<BoardColumnDTO> dtos = new ArrayList();
         String sqlSelectBoardColumns = """
         SELECT 
             bc.id, 
             bc.name, 
             bc.`order`, 
             bc.kind,
-            COUNT(SELECT c.id
+            (SELECT COUNT(c.id)
                   FROM CARDS c
                   WHERE c.board_column_id = bc.id) as cards_amount
         FROM BOARDS_COLUMNS bc
-        WHERE id = ? 
-        ORDER BY `order`
+        WHERE board_id = ? 
+        ORDER BY `order`;
+        """;
+        try (PreparedStatement statement = connection.prepareStatement(sqlSelectBoardColumns)) {
+            statement.setLong(1, id);
+            statement.executeQuery();
+            ResultSet rsSelectBoardColumns = statement.getResultSet();
+            if(rsSelectBoardColumns.next()){
+                BoardColumnDTO entity = new BoardColumnDTO(rsSelectBoardColumns.getLong("id"),
+                                                           rsSelectBoardColumns.getString("name"),
+                                                           rsSelectBoardColumns.getInt("order"),
+                                                           findByName(rsSelectBoardColumns.getString("kind")),
+                                                           rsSelectBoardColumns.getInt("cards_amount")
+                                                         );
+
+                dtos.add(entity);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return dtos;
+    }
+
+    public Optional<BoardColumnEntity> findById(Long id) {
+        List<BoardColumnEntity> entities = new ArrayList();
+        String sqlSelectBoardColumns =
+        """
+            SELECT 
+                bc.name, 
+                bc.kind ,
+                c.id,
+                c.title,
+                c.description
+            FROM 
+            BOARDS_COLUMNS bc
+            LEFT JOIN CARDS c ON c.board_column_id = bc.id
+            WHERE bc.id = ? 
         """;
         try (PreparedStatement statement = connection.prepareStatement(sqlSelectBoardColumns)) {
             statement.setLong(1, id);
@@ -77,17 +117,22 @@ public class BoardColumnDao {
             ResultSet rsSelectBoardColumns = statement.getResultSet();
             if(rsSelectBoardColumns.next()){
                 BoardColumnEntity entity = new BoardColumnEntity();
-                entity.setId(rsSelectBoardColumns.getLong("id"));
                 entity.setName(rsSelectBoardColumns.getString("name"));
-                entity.setOrder(rsSelectBoardColumns.getInt("order"));
-                entity.setKind(BoardColumnKingEnum.findByName(rsSelectBoardColumns.getString("kind")));
-
-                entities.add(entity);
+                entity.setKind(findByName(rsSelectBoardColumns.getString("kind")));
+                while (rsSelectBoardColumns.next());{
+                    CardEntity card = new CardEntity();
+                    card.setId(rsSelectBoardColumns.getLong("id"));
+                    card.setTitle(rsSelectBoardColumns.getString("title"));
+                    card.setDescription(rsSelectBoardColumns.getString("description"));
+                    entity.getCards().add(card);
+                }
+                return Optional.of(entity);
             }
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return entities;
+        return Optional.empty();
     }
+
 }

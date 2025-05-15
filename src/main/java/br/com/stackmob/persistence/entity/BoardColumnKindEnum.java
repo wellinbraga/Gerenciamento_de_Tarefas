@@ -2,11 +2,11 @@ package br.com.stackmob.persistence.entity;
 
 import java.util.stream.Stream;
 
-public enum BoardColumnKingEnum {
+public enum BoardColumnKindEnum {
     INITIAL, FINAL, CANCEL, PENDING;
 
-    public static BoardColumnKingEnum findByName(final String name){
-        return Stream.of(BoardColumnKingEnum.values())
+    public static BoardColumnKindEnum findByName(final String name){
+        return Stream.of(BoardColumnKindEnum.values())
                 .filter(b -> b.name().equals(name))
                 .findFirst().orElseThrow();
     }
