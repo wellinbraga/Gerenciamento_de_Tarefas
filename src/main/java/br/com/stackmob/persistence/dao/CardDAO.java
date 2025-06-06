@@ -1,6 +1,7 @@
 package br.com.stackmob.persistence.dao;
 
 import br.com.stackmob.dto.CardDetailsDTO;
+import br.com.stackmob.persistence.entity.CardEntity;
 import lombok.AllArgsConstructor;
 
 import java.sql.Connection;
@@ -16,7 +17,28 @@ import static java.util.Objects.nonNull;
 @AllArgsConstructor
 public class CardDAO {
 
-    private final Connection connection;
+    private Connection connection;
+
+    public CardEntity insert(CardEntity entity) throws SQLException{
+        String sql = "INSERTO INTO CARDS (title, description, board_column) VALUES (?,?,?);";
+        try(PreparedStatement startement = connection.prepareStatement(sql)){
+            startement.setString(1, entity.getTitle());
+            startement.setString(2, entity.getDescription());
+            startement.setLong(3, entity.getBoardColumn().getId());
+        }
+
+        return  entity;
+    }
+
+    public void moveToColumn(final Long cardId, final Long columnId) throws SQLException {
+        String sql = "UPDATE CARDS SET board_column_id = ? WHERE id = ?;";
+        try(PreparedStatement statement = connection.prepareStatement(sql)){
+            statement.setLong(1, columnId);
+            statement.setLong(2, cardId);
+            statement.executeUpdate();
+        }
+    }
+
 
     public Optional<CardDetailsDTO> findById(final Long id) throws SQLException {
         String sql =
@@ -33,7 +55,7 @@ public class CardDAO {
                 FROM CARDS c
                 LEFT JOIN BLOCKS b ON c.id = b.card_id AND b.unblocked IS NULL
                 INNER JOIN BOARDS_COLUMNS bc ON bc.id = b.board_columns_id
-                WHERE id = ?;
+                WHERE c.id = ?;
                 """;
         try(PreparedStatement statement = connection.prepareStatement(sql)){
             statement.setLong(1, id);
